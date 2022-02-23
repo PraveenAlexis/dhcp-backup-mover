@@ -60,7 +60,7 @@ if ([System.IO.Directory]::Exists($DriveLetter)) {
             Write-Log -Message "DHCP Backup Sucessfull" -Severity INFO
         }
 
-        #Compress backed up files
+        #Archive backed up files
         try{
             Compress-Archive -Path "C:\Windows\Temp\DHCP\Backup\*" -DestinationPath "C:\Windows\Temp\DHCP\dhcp-backup-$Date.zip" -Update
         }
@@ -74,18 +74,18 @@ if ([System.IO.Directory]::Exists($DriveLetter)) {
             Write-Log -Message "Archiving Backup Sucessfull" -Severity INFO
         }
 
-        #Hasinh the compresed source file 
+        #Hashing the archived source file 
         try{
             $SourceFileHash = (Get-FileHash "C:\Windows\Temp\DHCP\dhcp-backup-$Date.zip" -Algorithm "MD5").Hash
         }
         catch{
-            Write-Log -Message "Hashing Destination File Error: $_" -Severity ERROR
+            Write-Log -Message "Hashing Source File Error: $_" -Severity ERROR
         }
         finally{
-            Write-Log -Message "Hashing Destination File" -Severity INFO
+            Write-Log -Message "Hashing Source File" -Severity INFO
         }
         if($?){
-            Write-Log -Message "Hashing Destination File Sucessfull" -Severity INFO
+            Write-Log -Message "Hashing Source File Sucessfull" -Severity INFO
         }
 
         #Copying the backed up file to the destination
