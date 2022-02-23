@@ -1,10 +1,11 @@
-$NetworkPath = "\\10.15.20.160\AD Logs"
-$FolderPath = "DHCP01"
-$DHCPSvrName = "PROD-DHCP01.hnbfinance.lk"
-$Console = $true
+$NetworkPath = "\\127.0.0.1\sharefolder"
+$TempDirPath = "C:\Windows\Temp\DHCP\Backup"
+$FolderPath = "" # folder which will contain DHCP backups
+$DHCPSvrName = "" #dhcp server name, this should be ip or full domain name
+$Console = $true #enable/disable console outputs
 
 $Date= Get-Date -Format "MM-dd-yyyy"
-net use * $NetworkPath /user:PTP-PR-QNAP04\adlogbackupadmin "2r&smeL@P5Z_jDX%"
+net use * $NetworkPath /user:domain\user "password"
 $DriveLetter = (Get-PSDrive | Where-Object { $_.DisplayRoot -eq $NetworkPath }).root
 
 function Write-Log {
@@ -31,8 +32,8 @@ function Write-Log {
     }
  }
 
-if (!(Test-Path "C:\Windows\Temp\DHCP\Backup")) {
-    New-Item "C:\Windows\Temp\DHCP\Backup" -ItemType Directory
+if (!(Test-Path "$TempDirPath")) {
+    New-Item "$TempDirPath" -ItemType Directory
 }
 
 if ([System.IO.Directory]::Exists($DriveLetter)) {
@@ -48,7 +49,7 @@ if ([System.IO.Directory]::Exists($DriveLetter)) {
         Write-Log -Message "Path Exists: $DriveLetter$FolderPath" -Severity INFO
         #Backup the DHCP server
         try{
-            Backup-DhcpServer -ComputerName $DHCPSvrName -Path "C:\Windows\Temp\DHCP\Backup"
+            Backup-DhcpServer -ComputerName $DHCPSvrName -Path "$TempDirPath"
         }
         catch{
             Write-Log -Message "DHCP Backup Error: $_" -Severity ERROR
@@ -62,7 +63,7 @@ if ([System.IO.Directory]::Exists($DriveLetter)) {
 
         #Archive backed up files
         try{
-            Compress-Archive -Path "C:\Windows\Temp\DHCP\Backup\*" -DestinationPath "C:\Windows\Temp\DHCP\dhcp-backup-$Date.zip" -Update
+            Compress-Archive -Path "$TempDirPath\*" -DestinationPath "C:\Windows\Temp\DHCP\dhcp-backup-$Date.zip" -Update
         }
         catch{
             Write-Log -Message "Archiving Backup Error: $_" -Severity ERROR
@@ -121,7 +122,7 @@ if ([System.IO.Directory]::Exists($DriveLetter)) {
         if($SourceFileHash -eq $DestFileHash){
             Write-Log -Message "Hash Compare Running"
             try{
-                Remove-Item -Path "C:\Windows\Temp\DHCP\Backup" -Recurse
+                Remove-Item -Path "$TempDirPath" -Recurse
             }
             catch{
                 Write-Log -Message "Deleting Backup Error: $_" -Severity ERROR
@@ -138,7 +139,7 @@ if ([System.IO.Directory]::Exists($DriveLetter)) {
         #if not delete the source backup and log the error
         else{
             try{
-                Remove-Item -Path "C:\Windows\Temp\DHCP\Backup" -Recurse
+                Remove-Item -Path "$TempDirPath" -Recurse
             }
             catch{
                 Write-Log -Message "Deleting Backup Error: $_" -Severity ERROR
